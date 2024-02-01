@@ -16,12 +16,16 @@ DFRobot_DHT11 DHT;
 #include <ssl_client.h>
 const char* ssid = "XXXXXXXXXXX";
 const char* password = "XXXXXXXXXXXXXXX";
+const char* ownerPass = "XXXXXXXXXXXXX";
+int subscriberChatId = 0;
 #define BOT_TOKEN "XXXXXXXXXXXXXXXXXXXXXXXXXXX"
 WiFiClientSecure secured_client;
 #include <UniversalTelegramBot.h>
 UniversalTelegramBot bot(BOT_TOKEN, secured_client);
 unsigned long bot_lasttime; // last time messages' scan has been done
 String chat_id;
+int updateFrequency = 100;
+int currentLoopCount = 0;
 
 void handleNewMessages(int numNewMessages)
 {
@@ -95,9 +99,20 @@ void loop() {
   display.setCursor(0,20);
   display.println(displayValueHumi);
   display.display();
-  delay(100);
+  delay(1000);
+  
   int numNewMessages = bot.getUpdates(bot.last_message_received + 1);
-
+  if(subscriberChatId > 0){
+    if(currentLoopCount == 0){
+      currentLoopCount = updateFrequency
+      String message = displayValueTemp + "C°\n" + displayValueHumi + "%";
+      bot.sendMessage(subscriberChatId, message);
+    }
+    else{
+      currentLoopCount =-1;
+    }
+  }
+  
   for (int i = 0; i < numNewMessages; i++) {
     chat_id = String(bot.messages[i].chat_id);
     String text = bot.messages[i].text;
@@ -105,6 +120,9 @@ void loop() {
     if (text.equals("read")) {
       String message = displayValueTemp + "C°\n" + displayValueHumi + "%";
       bot.sendMessage(chat_id, message);
+    }
+    if (text.equals("subscribe")) {
+      subscriberChatId = chat_id
     }
   }
   
